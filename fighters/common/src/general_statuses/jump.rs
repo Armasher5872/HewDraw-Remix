@@ -30,11 +30,6 @@ fn nro_hook(info: &skyline::nro::NroInfo) {
     }
 }
 
-/* Moves that should bypass the momentum logic (in terms of the jump status script) */
-const MOMENTUM_EXCEPTION_MOVES: [smash::lib::LuaConst ; 1] = [
-    FIGHTER_SONIC_STATUS_KIND_SPIN_JUMP
-];
-
 #[common_status_script(status = FIGHTER_STATUS_KIND_JUMP, condition = LUA_SCRIPT_STATUS_FUNC_STATUS_PRE,
     symbol = "_ZN7lua2cpp16L2CFighterCommon15status_pre_JumpEv")]
 unsafe fn status_pre_Jump(fighter: &mut L2CFighterCommon) -> L2CValue {
@@ -163,8 +158,6 @@ unsafe extern "C" fn status_Jump_Main(fighter: &mut L2CFighterCommon) -> L2CValu
 
 #[hook(module = "common", symbol = "_ZN7lua2cpp16L2CFighterCommon15status_Jump_subEN3lib8L2CValueES2_")]
 unsafe extern "C" fn status_Jump_sub(fighter: &mut L2CFighterCommon, arg1: L2CValue, arg2: L2CValue) -> L2CValue {
-    let mut x_vel = KineticModule::get_sum_speed_x(fighter.module_accessor, *KINETIC_ENERGY_RESERVE_ATTRIBUTE_ALL) - KineticModule::get_sum_speed_x(fighter.module_accessor, *KINETIC_ENERGY_RESERVE_ATTRIBUTE_GROUND) - KineticModule::get_sum_speed_x(fighter.module_accessor, *KINETIC_ENERGY_RESERVE_ATTRIBUTE_EXTERN);
-
     ControlModule::reset_flick_y(fighter.module_accessor);
     ControlModule::reset_flick_sub_y(fighter.module_accessor);
     fighter.global_table[FLICK_Y].assign(&0xFE.into());
