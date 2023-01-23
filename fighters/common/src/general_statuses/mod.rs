@@ -93,13 +93,9 @@ pub unsafe fn status_pre_DamageAir(fighter: &mut L2CFighterCommon) -> L2CValue {
 #[skyline::hook(replace = smash::lua2cpp::L2CFighterCommon_sub_DamageFlyCommon_init)]
 pub unsafe fn damage_fly_common_init(fighter: &mut L2CFighterCommon) {
     ControlModule::set_command_life_extend(fighter.module_accessor, 5);
-    //if VarModule::is_flag(fighter.battle_object, vars::common::instance::IS_KNOCKDOWN_THROW) {
-
-    // never allow transition into the ground bounce status. 
-    // This will result in melee-style knockdown from spikes, rather than a ground bounce.
-    WorkModule::unable_transition_term(fighter.module_accessor, *FIGHTER_STATUS_TRANSITION_TERM_ID_DAMAGE_FLY_REFLECT_D);
-    
-    //}
+    if VarModule::is_flag(fighter.battle_object, vars::common::instance::IS_KNOCKDOWN_THROW) {
+        WorkModule::unable_transition_term(fighter.module_accessor, *FIGHTER_STATUS_TRANSITION_TERM_ID_DAMAGE_FLY_REFLECT_D);
+    }
     VarModule::off_flag(fighter.battle_object, vars::common::instance::IS_KNOCKDOWN_THROW);
     original!()(fighter)
 }
@@ -363,11 +359,22 @@ unsafe fn sub_transition_group_check_ground(fighter: &mut L2CFighterCommon, to_s
     false.into()
 }
 
+// This function runs once per frame for all battle objects, immediately before MAIN status
+// Processes of this function include:
+//   1. Incrementing CURRENT_FRAME counter in global table
+//   2. Calling INIT status
+//   3. Calling sub statuses
+//   4. Updating situation kind in global table
 #[skyline::hook(replace = smash::lua2cpp::L2CFighterBase_sys_line_status_system_control)]
 pub unsafe fn sys_line_status_system_control_hook(fighter: &mut L2CFighterBase) -> L2CValue {
     if VarModule::has_var_module(fighter.battle_object)
     && VarModule::is_flag(fighter.battle_object, vars::common::instance::CHECK_CHANGE_MOTION_ONLY)
     {
+        // When we are calling MAIN status for the sole purpose of changing motion kind upon contact with a surface,
+        // there is no need to increment the CURRENT_FRAME counter,
+        // or run sub statuses (which are often used to increment various counters used during a status)
+        // So we are only updating situation kind, then returning
+        // MAIN status will then be called after returning
         let situation_kind = StatusModule::situation_kind(fighter.module_accessor);
         fighter.global_table[SITUATION_KIND].assign(&L2CValue::I32(situation_kind));
         fighter.global_table[0xD].assign(&L2CValue::Bool(false));
