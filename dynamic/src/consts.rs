@@ -250,6 +250,7 @@ pub mod vars {
 
             pub const RESTING_HIP_OFFSET_Y: i32 = 0x1000;
 
+            pub const TELEPORT_INITIAL_SPEED_Y: i32 = 0x1000;
         }
     }
 
