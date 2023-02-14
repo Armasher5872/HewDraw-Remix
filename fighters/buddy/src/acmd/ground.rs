@@ -101,7 +101,7 @@ unsafe fn buddy_attack_dash_game(fighter: &mut L2CAgentBase) {
 }
 
 #[acmd_script( agent = "buddy", script = "effect_attackdash", category = ACMD_EFFECT, low_priority )]
-unsafe fn effect_attackdash(fighter: &mut L2CAgentBase) {
+unsafe fn buddy_attack_dash_effect(fighter: &mut L2CAgentBase) {
     let lua_state = fighter.lua_state_agent;
     let boma = fighter.boma();
     frame(lua_state, 7.0);
@@ -147,13 +147,12 @@ unsafe fn effect_attackdash(fighter: &mut L2CAgentBase) {
     }
 }
 
-
 pub fn install() {
     install_acmd_scripts!(
         buddy_attack_11_game,
         buddy_attack_12_game,
         buddy_attack_13_game,
         buddy_attack_dash_game,
-        effect_attackdash
+        buddy_attack_dash_effect,
     );
 }
