@@ -121,7 +121,9 @@ fn nro_hook(info: &skyline::nro::NroInfo) {
             sub_transition_group_check_ground,
             sys_line_status_system_control_hook,
             status_FallSub_hook,
-            super_jump_punch_main_hook
+            super_jump_punch_main_hook,
+            end_pass_ground,
+            sub_cliff_uniq_process_exec_fix_pos
         );
     }
 }
@@ -407,16 +409,48 @@ pub unsafe fn super_jump_punch_main_hook(fighter: &mut L2CFighterCommon) {
         return;
     }
     if WorkModule::is_enable_transition_term(fighter.module_accessor, *FIGHTER_STATUS_TRANSITION_TERM_ID_LANDING_FALL_SPECIAL) {
-        if fighter.global_table[PREV_SITUATION_KIND] == SITUATION_KIND_AIR
-        && fighter.global_table[SITUATION_KIND] == SITUATION_KIND_GROUND
-        {
-            fighter.change_status(FIGHTER_STATUS_KIND_LANDING_FALL_SPECIAL.into(), false.into());
+        if WorkModule::is_flag(fighter.module_accessor, *FIGHTER_STATUS_SUPER_JUMP_PUNCH_FLAG_MOVE_TRANS) {
+            if fighter.global_table[PREV_SITUATION_KIND] == SITUATION_KIND_AIR
+            && fighter.global_table[SITUATION_KIND] == SITUATION_KIND_GROUND
+            && MotionModule::trans_move_speed(fighter.module_accessor).y < 0.0
+            {
+                fighter.change_status(FIGHTER_STATUS_KIND_LANDING_FALL_SPECIAL.into(), false.into());
+            }
+        }
+        else {
+            if WorkModule::is_flag(fighter.module_accessor, *FIGHTER_STATUS_SUPER_JUMP_PUNCH_FLAG_CHANGE_KINE)
+            && fighter.global_table[PREV_SITUATION_KIND] == SITUATION_KIND_AIR
+            && fighter.global_table[SITUATION_KIND] == SITUATION_KIND_GROUND
+            {
+                fighter.change_status(FIGHTER_STATUS_KIND_LANDING_FALL_SPECIAL.into(), false.into());
+            }
         }
     }
     if MotionModule::is_end(fighter.module_accessor) {
         let new_status = WorkModule::get_int(fighter.module_accessor, *FIGHTER_STATUS_SUPER_JUMP_PUNCH_WORK_INT_STATUS_KIND_END);
         fighter.change_status_req(new_status, false);
     }
+}
+
+#[skyline::hook(replace = smash::lua2cpp::L2CFighterCommon_end_pass_ground)]
+pub unsafe fn end_pass_ground(fighter: &mut L2CFighterCommon) -> L2CValue {
+    if fighter.global_table[PREV_STATUS_KIND] != FIGHTER_STATUS_KIND_DASH
+    && (fighter.kind() != *FIGHTER_KIND_RYU || fighter.global_table[PREV_STATUS_KIND] != FIGHTER_RYU_STATUS_KIND_DASH_BACK)
+    && (fighter.kind() != *FIGHTER_KIND_KEN || fighter.global_table[PREV_STATUS_KIND] != FIGHTER_RYU_STATUS_KIND_DASH_BACK)
+    && (fighter.kind() != *FIGHTER_KIND_DOLLY || fighter.global_table[PREV_STATUS_KIND] != FIGHTER_DOLLY_STATUS_KIND_DASH_BACK)
+    && (fighter.kind() != *FIGHTER_KIND_DEMON || fighter.global_table[PREV_STATUS_KIND] != FIGHTER_DEMON_STATUS_KIND_DASH_BACK)
+    {
+        WorkModule::on_flag(fighter.module_accessor, *FIGHTER_INSTANCE_WORK_ID_FLAG_JUMP_NO_LIMIT_ONCE);
+    }
+    call_original!(fighter)
+}
+
+// I honestly don't know why this function was needed in vanilla in the first place
+// Forces situation kind changes during ledge actions, even though situation kind automatically changes based on character position
+// Also forces ECB shape changes, while stubbing this doesn't affect ECB shape whatsoever
+#[skyline::hook(replace = smash::lua2cpp::L2CFighterCommon_sub_cliff_uniq_process_exec_fix_pos)]
+pub unsafe fn sub_cliff_uniq_process_exec_fix_pos(fighter: &mut L2CFighterCommon) {
+    return;
 }
 
 pub fn install() {
