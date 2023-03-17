@@ -5,7 +5,7 @@ use globals::*;
 
  
 unsafe fn bouncing_fish_return_cancel(fighter: &mut L2CFighterCommon, boma: &mut BattleObjectModuleAccessor, status_kind: i32, situation_kind: i32, cat1: i32, frame: f32) {
-    if status_kind == *FIGHTER_SHEIK_STATUS_KIND_SPECIAL_LW_RETURN && frame <= 15.0 {
+    if status_kind == *FIGHTER_SHEIK_STATUS_KIND_SPECIAL_LW_RETURN && boma.status_frame() <= 14 {
         if situation_kind == *SITUATION_KIND_AIR {
             boma.check_jump_cancel(false);
         }
@@ -52,7 +52,7 @@ pub unsafe fn moveset(fighter: &mut L2CFighterCommon, boma: &mut BattleObjectMod
 pub fn sheik_frame_wrapper(fighter: &mut smash::lua2cpp::L2CFighterCommon) {
     unsafe {
         common::opff::fighter_common_opff(fighter);
-		sheik_frame(fighter)
+        sheik_frame(fighter)
     }
 }
 
